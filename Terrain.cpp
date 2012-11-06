@@ -14,10 +14,10 @@ Terrain::Terrain(int n_, bool use_seed, int seed_) :
     else
         srand(time(NULL));
 
-    matrix[0][0] = next_rand(MIN, MAX);
-    matrix[0][size - 1] = next_rand(MIN, MAX);
-    matrix[size - 1][0] = next_rand(MIN, MAX);
-    matrix[size - 1][size - 1] = next_rand(MIN, MAX);
+    matrix[0][0] = (next_rand(MIN, MAX) + 0.0) / MAX;
+    matrix[0][size - 1] = (next_rand(MIN, MAX) + 0.0) / MAX;
+    matrix[size - 1][0] = (next_rand(MIN, MAX) + 0.0) / MAX;
+    matrix[size - 1][size - 1] = (next_rand(MIN, MAX) + 0.0) / MAX;
 
     generate(matrix, size, 0, 0);
 }
@@ -28,7 +28,7 @@ Terrain::generate(double **matrix, int size, int x_shift, int y_shift)
     if (size <= 2)
         return;
 
-    int corners[4];
+    double corners[4];
 
     corners[0] = matrix[x_shift][y_shift];
     corners[1] = matrix[x_shift + size - 1][y_shift];

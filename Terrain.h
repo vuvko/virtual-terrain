@@ -23,8 +23,8 @@ public:
 
     enum
     {
-        MIN = -1000,
-        MAX = 1000
+        MIN = -100,
+        MAX = 100
     };
 private:
     double **matrix;
