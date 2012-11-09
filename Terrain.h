@@ -5,10 +5,13 @@
 #include <cmath>
 #include <ctime>
 #include <stdexcept>
+#include <vector>
+#include <map>
 
 #include <iostream>
 
 #include "Random.h"
+#include "common.h"
 
 class Terrain
 {
@@ -19,12 +22,25 @@ public:
     double at(int x, int y) const;
     double &at(int x, int y);
     int get_size(void) const;
+    std::vector<float> generate_line(int num) const;
+    void generate_land_arrays(std::vector<float> &pointers,
+            std::vector<float> &normals,
+            std::vector<unsigned char> &colors,
+            std::vector<unsigned> &indices);
+
+    void generate_water_arrays(std::vector<float> &pointers,
+            std::vector<float> &normals,
+            std::vector<unsigned char> &colors,
+            std::vector<unsigned> &indices);
+
     void print(void) const;
 
     enum
     {
-        MIN = -100,
-        MAX = 100
+        MIN = -10,
+        MAX = 200,
+
+        NORM = 7
     };
 private:
     double **matrix;
