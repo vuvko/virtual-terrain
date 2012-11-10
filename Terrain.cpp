@@ -26,13 +26,18 @@ Terrain::Terrain(int n_, bool use_seed, int seed_) :
 
     // post process
     // using gaussian filter
-    int f_size;
-    double sigma = min(2.0, size / 50.0);
+    int f_size = 0;
+    double sigma = 1;//min(2.0, size / 50.0);
+    double bound = 5, approx = 1;
     vector<vector<double> > filter = generate_filter(sigma, f_size);
     for (int x = 0; x < size; ++x) {
         for (int y = 0; y < size; ++y) {
             double sum = 0;
-            //cerr << "(" << x << ", " << y << ")" << endl;
+            /*
+            if (matrix[x][y] > bound) {
+                continue;
+            }
+            */
             for (int i = 0; i < f_size; ++i) {
                 int dx = -size / 2 + i;
                 if ((x + dx < 0) || (x + dx >= size)) {
@@ -40,14 +45,15 @@ Terrain::Terrain(int n_, bool use_seed, int seed_) :
                 }
                 for (int j = 0; j < f_size; ++j) {
                     int dy = -size / 2 + j;
-                    //cerr << "[" << dx << ", " << dy << "]" << endl;
                     if ((y + dy < 0) || (y + dy >= size)) {
                         dy = -dy;
                     }
                     sum += matrix[x + dx][y + dy] * filter[i][j];
                 }
             }
-            matrix[x][y] = sum;
+            if (sum < matrix[x][y] - approx || matrix[x][y] < bound) {
+                matrix[x][y] = sum;
+            }
         }
     }
 

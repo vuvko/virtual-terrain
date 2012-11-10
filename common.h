@@ -9,6 +9,14 @@
 
 const double eps = 0.0001;
 
+//double sqr(double a);
+
+template<typename T> T
+sqr(T a)
+{
+    return a * a;
+}
+
 void get_normal(float a[], float b[], float c[], float *n);
 
 std::vector<float>
@@ -20,6 +28,9 @@ std::vector<float> get_normal(
         const std::vector<float> &a,
         const std::vector<float> &b,
         const std::vector<float> &c);
+
+double norm(const std::vector<double> a);
+double norm(const std::vector<double> a, const std::vector<double> b);
 
 void set_color(double h, unsigned char *colors);
 

@@ -60,6 +60,24 @@ get_normal(
 
     return n;
 }
+/*
+double
+sqr(double a)
+{
+    return a * a;
+}
+*/
+double
+norm(const std::vector<double> a)
+{
+    return sqrt(a[0] * a[0] + a[1] * a[1] + a[2] * a[2]);
+}
+
+double
+norm(const std::vector<double> a, const std::vector<double> b)
+{
+    return sqrt(sqr(b[0] - a[0]) + sqr(b[1] - a[1]) + sqr(b[2] - a[2]));
+}
 
 void
 set_color(double h, unsigned char *colors)
@@ -162,12 +180,14 @@ get_color(float h)
     };
     vector<unsigned char> colors(3, 0);
     h = fabs(h);
+
     if (h < WATER + eps) {
         colors[0] = WATER_R;
         colors[1] = WATER_G;
         colors[2] = WATER_B;
         return colors;
     }
+
     if (h < SAND + eps) {
         colors[0] = SAND_R;
         colors[1] = SAND_G;

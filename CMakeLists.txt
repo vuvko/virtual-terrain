@@ -11,8 +11,9 @@ aux_source_directory(. SRC_LIST)
 find_library(GL GL)
 find_library(GLU GLU)
 find_library(GLUT glut)
+find_library(GLEW GLEW)
 
 #
 add_executable(${PROJECT_NAME} ${SRC_LIST})
 
-target_link_libraries(${PROJECT_NAME} ${GL} ${GLU} ${GLUT})
+target_link_libraries(${PROJECT_NAME} ${GLEW} ${GL} ${GLU} ${GLUT})
