@@ -1,5 +1,6 @@
 #include <iostream>
 #include <cstdlib>
+#include <GL/glew.h>
 #include <GL/glut.h>
 #include <GL/gl.h>
 #include <vector>
@@ -20,6 +21,7 @@ void init_material(void);
 void init_fog(void);
 void render_scene(void);
 void render_water(void);
+void set_camera(void);
 
 GLint Width = 512, Height = 512;
 
@@ -27,9 +29,14 @@ double x_pos = 0;
 double y_pos = 0;
 double z_pos = 0;
 
+vector<double> eye(3, 0);
+vector<double> at(3, 0);
+double phi = 0, psi = 0, r = 0;
+const double shift = 1.5;
+
 enum
 {
-    N = 5,
+    N = 7,
     MARGIN = 2,
     OBJECTS_NUM = 50
 };
@@ -47,18 +54,26 @@ vector<unsigned> water_indices;
 int
 main(int argc, char *argv[])
 {
-    //terrain_matrix.print();
     srand(time(NULL));
     for (int i = 0; i < objects.size(); ++i) {
-        int x = MARGIN + next_rand(terrain_matrix.get_size() - 2 * MARGIN);
-        int y = MARGIN + next_rand(terrain_matrix.get_size() - 2 * MARGIN);
-        cerr << x << ' ' << y << endl;
+        int x = MARGIN + next_rand((terrain_matrix.get_size() - 2) / MARGIN) * MARGIN;
+        int y = MARGIN + next_rand((terrain_matrix.get_size() - 2) / MARGIN) * MARGIN;
+
         objects[i] = Object(x, y, terrain_matrix.at(x, y));
     }
     terrain_matrix.generate_land_arrays(land_pointers, land_normals,
                                         land_colors, land_indices);
     terrain_matrix.generate_water_arrays(water_pointers, water_normals,
                                          water_colors, water_indices);
+    r = 60;
+
+    phi = 45;
+    psi = 135;
+
+    double size = terrain_matrix.get_size();
+    at[0] = size / 2;
+    at[1] = size / 2;
+    at[2] = 0;
 
     glutInit(&argc, argv);
     glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE | GLUT_DEPTH);
@@ -67,18 +82,26 @@ main(int argc, char *argv[])
 
     init_light();
     init_material();
-    //init_fog();
-/*
-    glEnable(GL_CULL_FACE);
-    glCullFace(GL_BACK);
-    glFrontFace(GL_CCW);
-*/
+    init_fog();
+
     //glEnable(GL_NORMALIZE);
 
     glutDisplayFunc(Display);
     glutReshapeFunc(Reshape);
     glutKeyboardFunc(Keyboard);
     glutSpecialFunc(Navi);
+
+    GLenum err = glewInit();
+    if (GLEW_OK != err) {
+        cerr << "Error: " << glewGetErrorString(err) << endl;
+        return 0;
+    }
+    cout << "Vendor: " << glGetString(GL_VENDOR) << endl;
+    cout << "Render: " << glGetString(GL_RENDERER) << endl;
+    cout << "Version: " << glGetString(GL_VERSION) << endl;
+    cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
+
+    cout << endl;
 
     glutMainLoop();
 
@@ -108,10 +131,10 @@ init_light(void)
 void
 init_material(void)
 {
-    float mat_dif[] = {0.9, 0.9, 0};
+    float mat_dif[] = {0.9, 0.9, 0.9};
     float mat_amb[] = {0.2, 0.2, 0.2};
-    float mat_spec[] = {0.6, 0.6, 0.6};
-    float mat_shi = 0.5 * 128;
+    float mat_spec[] = {0.2, 0.2, 0.2};
+    float mat_shi = 0.2 * 128;
     glMaterialfv(GL_FRONT, GL_AMBIENT, mat_amb);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_dif);
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_spec);
@@ -123,11 +146,10 @@ init_material(void)
 void
 init_fog(void)
 {
-    GLfloat fog_color[4] = {0.5, 0.5, 0.5, 1};
+    GLfloat fog_color[4] = {0.5, 0.5, 0.55, 1};
     glEnable(GL_FOG);
-    glFogi(GL_FOG_MODE, GL_LINEAR);
-    glFogf(GL_FOG_START, 20);
-    glFogf(GL_FOG_END, 100);
+    glFogi(GL_FOG_MODE, GL_EXP2);
+    glFogf(GL_FOG_DENSITY, 0.01);
     glFogfv(GL_FOG_COLOR, fog_color);
 }
 
@@ -166,9 +188,9 @@ Display(void)
 
     glPopMatrix();
 
-    render_water();
-
     glDisable(GL_STENCIL_TEST);
+
+    render_water();
 
     glFlush();
 }
@@ -176,43 +198,6 @@ Display(void)
 void
 render_scene(void)
 {
-    /*
-    glBegin(GL_TRIANGLES);
-    for (int x = 0; x < terrain_matrix.get_size() - 1; ++x) {
-        for (int y = 0; y < terrain_matrix.get_size() - 1; ++y) {
-            float a[3], b[3], c[3], n[3];
-            unsigned char cr[3];
-            a[0] = x; a[1] = y; a[2] = terrain_matrix.at(a[0], a[1]);
-            b[0] = x + 1; b[1] = y; b[2] = terrain_matrix.at(b[0], b[1]);
-            c[0] = x + 1; c[1] = y + 1; c[2] = terrain_matrix.at(c[0], c[1]);
-            if (a[2] > eps || b[2] > eps || c[2] > eps) {
-                set_color(a[2], cr); glColor3ubv(cr);
-                glVertex3fv(a);
-                set_color(b[2], cr); glColor3ubv(cr);
-                glVertex3fv(b);
-                set_color(c[2], cr); glColor3ubv(cr);
-                get_normal(a, b, c, n);
-                glNormal3fv(n);
-                glVertex3fv(c);
-            }
-            a[0] = x; a[1] = y; a[2] = terrain_matrix.at(a[0], a[1]);
-            b[0] = x + 1; b[1] = y + 1; b[2] = terrain_matrix.at(b[0], b[1]);
-            c[0] = x; c[1] = y + 1; c[2] = terrain_matrix.at(c[0], c[1]);
-            if (a[2] > eps || b[2] > eps || c[2] > eps) {
-                set_color(a[2], cr); glColor3ubv(cr);
-                glVertex3fv(a);
-                set_color(b[2], cr); glColor3ubv(cr);
-                glVertex3fv(b);
-                set_color(c[2], cr); glColor3ubv(cr);
-                get_normal(a, b, c, n);
-                glNormal3fv(n);
-                glVertex3fv(c);
-            }
-        }
-    }
-    glEnd();
-    */
-
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
@@ -234,43 +219,6 @@ render_scene(void)
 void
 render_water(void)
 {
-    /*
-    glBegin(GL_TRIANGLES);
-    for (int x = 0; x < terrain_matrix.get_size() - 1; ++x) {
-        for (int y = 0; y < terrain_matrix.get_size() - 1; ++y) {
-            float a[3], b[3], c[3], n[3];
-            unsigned char cr[4];
-            a[0] = x; a[1] = y; a[2] = terrain_matrix.at(a[0], a[1]);
-            b[0] = x + 1; b[1] = y; b[2] = terrain_matrix.at(b[0], b[1]);
-            c[0] = x + 1; c[1] = y + 1; c[2] = terrain_matrix.at(c[0], c[1]);
-            if (a[2] < eps && b[2] < eps && c[2] < eps) {
-                set_water_color(cr); glColor4ubv(cr);
-                glVertex3fv(a);
-                set_water_color(cr); glColor4ubv(cr);
-                glVertex3fv(b);
-                set_water_color(cr); glColor4ubv(cr);
-                get_normal(a, b, c, n);
-                glNormal3fv(n);
-                glVertex3fv(c);
-            }
-            a[0] = x; a[1] = y; a[2] = terrain_matrix.at(a[0], a[1]);
-            b[0] = x + 1; b[1] = y + 1; b[2] = terrain_matrix.at(b[0], b[1]);
-            c[0] = x; c[1] = y + 1; c[2] = terrain_matrix.at(c[0], c[1]);
-            if (a[2] < eps && b[2] < eps && c[2] < eps) {
-                set_water_color(cr); glColor4ubv(cr);
-                glVertex3fv(a);
-                set_water_color(cr); glColor4ubv(cr);
-                glVertex3fv(b);
-                set_water_color(cr); glColor4ubv(cr);
-                get_normal(a, b, c, n);
-                glNormal3fv(n);
-                glVertex3fv(c);
-            }
-        }
-    }
-    glEnd();
-    */
-
     glEnableClientState(GL_VERTEX_ARRAY);
     glEnableClientState(GL_COLOR_ARRAY);
     glEnableClientState(GL_NORMAL_ARRAY);
@@ -296,11 +244,7 @@ Reshape(GLint w, GLint h)
     glLoadIdentity();
     gluPerspective(40, (GLfloat)w / h, 1, 2000);
 
-    glMatrixMode(GL_MODELVIEW);
-    glLoadIdentity();
-    gluLookAt(-15, -15, 15,
-              0, 0, 0,
-              0, 0, 1);
+    set_camera();
 }
 
 void
@@ -317,44 +261,63 @@ Keyboard(unsigned char key, int x, int y)
 void
 Navi(int key, int x, int y)
 {
-    float x_tmp = x_pos;
-    float y_tmp = y_pos;
-    float z_tmp = z_pos;
+    double dx = 0, dy = 0, dz = 0;
+    double r_psi = psi * M_PI / 180;
+    double r_phi = phi * M_PI / 180;
     switch (key)
     {
     case GLUT_KEY_LEFT:
-        x_pos += 1.2;
+        dx = -shift * cos(r_phi - M_PI / 2);
+        dy = -shift * sin(r_phi - M_PI / 2);
         break;
     case GLUT_KEY_RIGHT:
-        x_pos -= 1.2;
+        dx = shift * cos(r_phi - M_PI / 2);
+        dy = shift * sin(r_phi - M_PI / 2);
         break;
     case GLUT_KEY_DOWN:
-        y_pos += 1.2;
+        r += shift;
         break;
     case GLUT_KEY_UP:
-        y_pos -= 1.2;
+        r -= shift;
         break;
     case GLUT_KEY_PAGE_DOWN:
-        z_pos += 1.2;
+        dx = -shift * sin(r_psi - M_PI / 2) * cos(r_phi);
+        dy = -shift * sin(r_psi - M_PI / 2) * sin(r_phi);
+        dz = -shift * cos(r_psi - M_PI / 2);
         break;
     case GLUT_KEY_PAGE_UP:
-        z_pos -= 1.2;
+        dx = shift * sin(r_psi - M_PI / 2) * cos(r_phi);
+        dy = shift * sin(r_psi - M_PI / 2) * sin(r_phi);
+        dz = shift * cos(r_psi - M_PI / 2);
         break;
     default:
         break;
     }
 
-    //glMatrixMode(GL_MODELVIEW);
-    //glLoadIdentity();
-    //gluLookAt(x_pos, y_pos, z_pos,
-    //          0, 0, 0,
-    //          0, 1, 0);
+    at[0] += dx;
+    at[1] += dy;
+    at[2] += dz;
 
-    //glutPostRedisplay();
-
-    glTranslatef(x_pos, y_pos, z_pos);
+    set_camera();
     Display();
-    x_pos = x_tmp;
-    y_pos = y_tmp;
-    z_pos = z_tmp;
+}
+
+void
+set_camera(void)
+{
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    double r_psi = psi * M_PI / 180;
+    double r_phi = phi * M_PI / 180;
+    double x = r * sin(r_psi) * cos(r_phi);
+    double y = r * sin(r_psi) * sin(r_phi);
+    double z = r * cos(r_psi);
+    eye[0] = at[0] - x;
+    eye[1] = at[1] - y;
+    eye[2] = at[2] - z;
+    gluLookAt(eye[0], eye[1], eye[2],
+            at[0], at[1], at[2],
+            sin(r_psi - M_PI / 2) * cos(r_phi),
+            sin(r_psi - M_PI / 2) * sin(r_phi),
+            cos(r_psi - M_PI / 2));
 }
