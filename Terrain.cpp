@@ -8,9 +8,11 @@ Terrain::Terrain(int n_, bool use_seed, int seed_) :
 {
     size = pow(2, n) + 1;
     matrix = (double **)calloc(size, sizeof(*matrix));
+    humidity = (double **)calloc(size, sizeof(*humidity));
     for (int i = 0; i < size; ++i)
     {
         matrix[i] = (double *)calloc(size, sizeof(*matrix[i]));
+        humidity[i] = (double *)calloc(size, sizeof(*humidity[i]));
     }
     if (use_seed)
         srand(seed);
@@ -28,7 +30,7 @@ Terrain::Terrain(int n_, bool use_seed, int seed_) :
     // using gaussian filter
     int f_size = 0;
     double sigma = 1;//min(2.0, size / 50.0);
-    double bound = 5, approx = 1;
+    double bound = 6, approx = 1;
     vector<vector<double> > filter = generate_filter(sigma, f_size);
     for (int x = 0; x < size; ++x) {
         for (int y = 0; y < size; ++y) {
@@ -57,12 +59,27 @@ Terrain::Terrain(int n_, bool use_seed, int seed_) :
         }
     }
 
+    vector<Coord> coords;
     for (int x = 0; x < size; ++x) {
         for (int y = 0; y < size; ++y) {
             if (matrix[x][y] < eps) {
                 matrix[x][y] = 0;
+                humidity[x][y] = MAX_HUMIDITY;
+                coords.push_back(Coord(x, y));
             }
         }
+    }
+
+    for (int i = 0; i < NUM_RAND_POINTS_PER_SIZE * size; ++i) {
+        int x = next_rand(size);
+        int y = next_rand(size);
+        humidity[x][y] = next_rand(MIN_HUMIDITY, MAX_HUMIDITY);
+        coords.push_back(Coord(x, y));
+    }
+    for (int i = 0; i < coords.size(); ++i) {
+        int x = coords[i].first;
+        int y = coords[i].second;
+        flow_humidity(x, y, humidity[x][y]);
     }
 }
 
@@ -81,23 +98,51 @@ Terrain::generate(double **matrix, int size, int x_shift, int y_shift)
 
     int med = size / 2;
     matrix[x_shift + med][y_shift] =
-            max(-5.1, (corners[0] + corners[1]) / 2.0 + size * next_rand() / NORM);
+            max(-1.1, (corners[0] + corners[1]) / 2.0 + size * next_rand() / NORM);
     matrix[x_shift + med][y_shift + size - 1] =
-            max(-5.1, (corners[2] + corners[3]) / 2.0 + size * next_rand() / NORM);
+            max(-1.1, (corners[2] + corners[3]) / 2.0 + size * next_rand() / NORM);
     matrix[x_shift][y_shift + med] =
-            max(-5.1, (corners[0] + corners[2]) / 2.0 + size * next_rand() / NORM);
+            max(-1.1, (corners[0] + corners[2]) / 2.0 + size * next_rand() / NORM);
     matrix[x_shift + size - 1][y_shift + med] =
-            max(-5.1, (corners[1] + corners[3]) / 2.0 + size * next_rand() / NORM);
+            max(-1.1, (corners[1] + corners[3]) / 2.0 + size * next_rand() / NORM);
 
     matrix[x_shift + med][y_shift + med] =
-            max(-5.1, (matrix[x_shift + med][y_shift] + matrix[x_shift + med][y_shift + size - 1] +
-            matrix[x_shift][y_shift + med] + matrix[x_shift + size - 1][y_shift + med]) / 4.0 +
+            max(-1.1, (matrix[x_shift][y_shift] + matrix[x_shift][y_shift + size - 1] +
+            matrix[x_shift + size - 1][y_shift + size - 1] +
+            matrix[x_shift + size - 1][y_shift]) / 4.0 +
             size * next_rand() / NORM);
 
     generate(matrix, (size + 1) / 2, x_shift, y_shift);
     generate(matrix, (size + 1) / 2, x_shift + med, y_shift);
     generate(matrix, (size + 1) / 2, x_shift, y_shift + med);
     generate(matrix, (size + 1) / 2, x_shift + med, y_shift + med);
+}
+
+void
+Terrain::flow_humidity(int x, int y, double val)
+{
+    double cur_val = val;
+    double shift = 0.3;
+    humidity[x][y] = val;
+    queue<Coord> coords;
+    coords.push(Coord(x, y));
+    while(!coords.empty()) {
+        Coord cur = coords.front();
+        coords.pop();
+        cur_val = humidity[cur.first][cur.second] - shift;
+        if (cur_val < eps) {
+            continue;
+        }
+        vector<Coord> neighbours = get_neighbours(cur.first, cur.second, size);
+        for (int i = 0; i < neighbours.size(); ++i) {
+            int x = neighbours[i].first;
+            int y = neighbours[i].second;
+            if (humidity[x][y] < cur_val) {
+                humidity[x][y] = cur_val;
+                coords.push(neighbours[i]);
+            }
+        }
+    }
 }
 
 vector<float>
@@ -138,7 +183,8 @@ Terrain::generate_land_arrays(std::vector<float> &pointers,
     vector<bool> flags(size * size, false);
     for (int x = 0; x < size - 1; ++x) {
         for (int y = 0; y < size - 1; ++y) {
-            vector<float> a(3), b(3), c(3), d(3), n(3);
+            vector<float> a(3), b(3), c(3), d(3);
+            vector<float> n(3);
             a[0] = x; a[1] = y; a[2] = matrix[x][y];
             b[0] = x + 1; b[1] = y; b[2] = matrix[x + 1][y];
             c[0] = x; c[1] = y + 1; c[2] = matrix[x][y + 1];
@@ -148,9 +194,9 @@ Terrain::generate_land_arrays(std::vector<float> &pointers,
                 local_p[b[0] * size + b[1]] = b;
                 local_p[d[0] * size + d[1]] = d;
 
-                local_c[a[0] * size + a[1]] = get_color(a[2]);
-                local_c[b[0] * size + b[1]] = get_color(b[2]);
-                local_c[d[0] * size + d[1]] = get_color(d[2]);
+                local_c[a[0] * size + a[1]] = get_color(a[2], humidity[int(a[0])][int(a[1])]);
+                local_c[b[0] * size + b[1]] = get_color(b[2], humidity[int(b[0])][int(b[1])]);
+                local_c[d[0] * size + d[1]] = get_color(d[2], humidity[int(d[0])][int(d[1])]);
 
                 if (flags[a[0] * size + a[1]]) {
                     n = get_normal(a, b, d);
@@ -187,9 +233,9 @@ Terrain::generate_land_arrays(std::vector<float> &pointers,
                 local_p[c[0] * size + c[1]] = c;
                 local_p[d[0] * size + d[1]] = d;
 
-                local_c[a[0] * size + a[1]] = get_color(a[2]);
-                local_c[c[0] * size + c[1]] = get_color(c[2]);
-                local_c[d[0] * size + d[1]] = get_color(d[2]);
+                local_c[a[0] * size + a[1]] = get_color(a[2], humidity[int(a[0])][int(a[1])]);
+                local_c[c[0] * size + c[1]] = get_color(c[2], humidity[int(c[0])][int(c[1])]);
+                local_c[d[0] * size + d[1]] = get_color(d[2], humidity[int(d[0])][int(d[1])]);
 
                 if (flags[a[0] * size + a[1]]) {
                     n = get_normal(a, d, c);
@@ -390,6 +436,8 @@ Terrain::~Terrain()
     for (int i = 0; i < size; ++i)
     {
         free(matrix[i]);
+        free(humidity[i]);
     }
     free(matrix);
+    free(humidity);
 }

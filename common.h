@@ -6,10 +6,14 @@
 #include <iostream>
 #include <vector>
 #include <cstdlib>
+#include <map>
 
 const double eps = 0.0001;
 
 //double sqr(double a);
+
+typedef std::pair<int, int> Coord;
+std::vector<Coord> get_neighbours(int x, int y, int size);
 
 template<typename T> T
 sqr(T a)
@@ -34,7 +38,7 @@ double norm(const std::vector<double> a, const std::vector<double> b);
 
 void set_color(double h, unsigned char *colors);
 
-std::vector<unsigned char> get_color(float h);
+std::vector<unsigned char> get_color(float h, double humidity);
 
 void set_water_color(unsigned char *colors);
 
