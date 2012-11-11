@@ -2,6 +2,18 @@
 
 using namespace std;
 
+vector<Coord>
+get_neighbours(int x, int y, int size)
+{
+    vector<Coord> neighbours;
+    neighbours.push_back(Coord((size + x - 1) % size, y));
+    neighbours.push_back(Coord((size + x + 1) % size, y));
+    neighbours.push_back(Coord(x, (size + y - 1) % size));
+    neighbours.push_back(Coord(x, (size + y + 1) % size));
+
+    return neighbours;
+}
+
 void
 get_normal(float a[3], float b[3], float c[3], float *n)
 {
@@ -149,30 +161,93 @@ set_color(double h, unsigned char *colors)
 }
 
 vector<unsigned char>
-get_color(float h)
+get_color(float h, double humidity)
 {
     enum
     {
-        MOUNTAIN = 13,
-        GRASS = 7,
-        SAND = 2,
-        WATER = 0,
+        // High mountain height
+        // everything is snow?
 
-        SNOW_R = 255,
-        SNOW_G = 255,
-        SNOW_B = 255,
+        // Mountain height
+        M_SNOW = 6,
+        M_TUNDRA = 3,
+        M_WASTE = 2,
+        M_DRY = 1,
 
-        MOUNTAIN_R = 200,
-        MOUNTAIN_G = 150,
-        MOUNTAIN_B = 150,
+        // Hight forest height
+        H_TAIGA = 6,
+        H_SHRUB = 4,
+        H_TEMPERATE_DESERT = 2,
 
-        GRASS_R = 5,
-        GRASS_G = 200,
-        GRASS_B = 5,
+        // Low forest height
+        L_TEMPERATE_RAIN = 6,
+        L_TEMPERATE_FOREST = 5,
+        L_GRASS = 3,
+        L_TEMPERATE_DESERT = 1,
 
-        SAND_R = 250,
-        SAND_G = 250,
-        SAND_B = 15,
+        // Low ground height
+        G_TROPIC = 6,
+        G_TEMPERATE_TROPIC = 4,
+        G_GRASS = 2,
+        G_DESERT = 1,
+
+        MOUNTAIN_HEIGHT = 13,
+        HIGH_FOREST_HEIGHT = 9,
+        LOW_FOREST_HEIGHT = 5,
+        LOW_GROUND_HEIGHT = 1,
+        WATER_HEIGHT = 0,
+
+        SNOW_R = 230,
+        SNOW_G = 230,
+        SNOW_B = 230,
+
+        TUNDRA_R = 150,
+        TUNDRA_G = 220,
+        TUNDRA_B = 200,
+
+        WASTE_R = 170,
+        WASTE_G = 160,
+        WASTE_B = 130,
+
+        DRY_R = 100,
+        DRY_G = 90,
+        DRY_B = 90,
+
+        TAIGA_R = 130,
+        TAIGA_G = 180,
+        TAIGA_B = 5,
+
+        SHRUB_R = 150,
+        SHRUB_G = 215,
+        SHRUB_B = 50,
+
+        TEMP_DESERT_R = 200,
+        TEMP_DESERT_G = 234,
+        TEMP_DESERT_B = 30,
+
+        TEMP_RAIN_R = 50,
+        TEMP_RAIN_G = 210,
+        TEMP_RAIN_B = 70,
+
+        TEMP_FOREST_R = 120,
+        TEMP_FOREST_G = 240,
+        TEMP_FOREST_B = 40,
+
+        GRASS_R = 30,
+        GRASS_G = 212,
+        GRASS_B = 55,
+
+        TROPIC_R = 15,
+        TROPIC_G = 235,
+        TROPIC_B = 80,
+
+        TEMP_TROPIC_R = 80,
+        TEMP_TROPIC_G = 255,
+        TEMP_TROPIC_B = 50,
+
+        DESERT_R = 235,
+        DESERT_G = 167,
+        DESERT_B = 50,
 
         WATER_R = 0,
         WATER_G = 10,
@@ -180,32 +255,121 @@ get_color(float h)
     };
     vector<unsigned char> colors(3, 0);
     h = fabs(h);
-
-    if (h < WATER + eps) {
+    //cerr << "HEIGHT: " << h << "; HUMIDITY: " << humidity << ";" << endl;
+    if (h < WATER_HEIGHT + eps) {
         colors[0] = WATER_R;
         colors[1] = WATER_G;
         colors[2] = WATER_B;
         return colors;
     }
 
-    if (h < SAND + eps) {
-        colors[0] = SAND_R;
-        colors[1] = SAND_G;
-        colors[2] = SAND_B;
-        return colors;
+    if (h < LOW_GROUND_HEIGHT + eps) {
+        // Low ground height
+        //cerr << "Low ground" << endl;
+        if (humidity < G_DESERT) {
+            colors[0] = DESERT_R;
+            colors[1] = DESERT_G;
+            colors[2] = DESERT_B;
+            return colors;
+        }
+        if (humidity < G_GRASS) {
+            colors[0] = GRASS_R;
+            colors[1] = GRASS_G;
+            colors[2] = GRASS_B;
+            return colors;
+        }
+        if (humidity < G_TEMPERATE_TROPIC) {
+            colors[0] = TEMP_TROPIC_R;
+            colors[1] = TEMP_TROPIC_G;
+            colors[2] = TEMP_TROPIC_B;
+            return colors;
+        }
+        if (humidity < G_TROPIC) {
+            colors[0] = TROPIC_R;
+            colors[1] = TROPIC_G;
+            colors[2] = TROPIC_B;
+            return colors;
+        }
     }
-    if (h < GRASS + eps) {
-        colors[0] = GRASS_R;
-        colors[1] = GRASS_G;
-        colors[2] = GRASS_B;
-        return colors;
+    if (h < LOW_FOREST_HEIGHT + eps) {
+        // Low forest height
+        //cerr << "Low forest" << endl;
+        if (humidity < L_TEMPERATE_DESERT) {
+            colors[0] = TEMP_DESERT_R;
+            colors[1] = TEMP_DESERT_G;
+            colors[2] = TEMP_DESERT_B;
+            return colors;
+        }
+        if (humidity < L_GRASS) {
+            colors[0] = GRASS_R;
+            colors[1] = GRASS_G;
+            colors[2] = GRASS_B;
+            return colors;
+        }
+        if (humidity < L_TEMPERATE_FOREST) {
+            colors[0] = TEMP_FOREST_R;
+            colors[1] = TEMP_FOREST_G;
+            colors[2] = TEMP_FOREST_B;
+            return colors;
+        }
+        if (humidity < L_TEMPERATE_RAIN) {
+            colors[0] = TEMP_RAIN_R;
+            colors[1] = TEMP_RAIN_G;
+            colors[2] = TEMP_RAIN_B;
+            return colors;
+        }
     }
-    if (h < MOUNTAIN + eps) {
-        colors[0] = MOUNTAIN_R;
-        colors[1] = MOUNTAIN_G;
-        colors[2] = MOUNTAIN_B;
-        return colors;
+    if (h < HIGH_FOREST_HEIGHT + eps) {
+        // Hight forest height
+        //cerr << "High forest" << endl;
+        if (humidity < H_TEMPERATE_DESERT) {
+            colors[0] = TEMP_DESERT_R;
+            colors[1] = TEMP_DESERT_G;
+            colors[2] = TEMP_DESERT_B;
+            return colors;
+        }
+        if (humidity < H_SHRUB) {
+            colors[0] = SHRUB_R;
+            colors[1] = SHRUB_G;
+            colors[2] = SHRUB_B;
+            return colors;
+        }
+        if (humidity < H_TAIGA) {
+            colors[0] = TAIGA_R;
+            colors[1] = TAIGA_G;
+            colors[2] = TAIGA_B;
+            return colors;
+        }
     }
+    if (h < MOUNTAIN_HEIGHT + eps) {
+        // Mountain height
+        //cerr << "Mountain" << endl;
+        if (humidity < M_DRY) {
+            colors[0] = DRY_R;
+            colors[1] = DRY_G;
+            colors[2] = DRY_B;
+            return colors;
+        }
+        if (humidity < M_WASTE) {
+            colors[0] = WASTE_R;
+            colors[1] = WASTE_G;
+            colors[2] = WASTE_B;
+            return colors;
+        }
+        if (humidity < M_TUNDRA) {
+            colors[0] = TUNDRA_R;
+            colors[1] = TUNDRA_G;
+            colors[2] = TUNDRA_B;
+            return colors;
+        }
+        if (humidity < M_SNOW) {
+            colors[0] = SNOW_R;
+            colors[1] = SNOW_G;
+            colors[2] = SNOW_B;
+            return colors;
+        }
+    }
+
     colors[0] = SNOW_R;
     colors[1] = SNOW_G;
     colors[2] = SNOW_B;
@@ -255,7 +419,7 @@ generate_colors(const vector<float> &pointers)
     int size = pointers.size() / 3;
     vector<vector<unsigned char> > colors(size, vector<unsigned char>(3, 0));
     for (int i = 0; i < size; ++i) {
-        colors[i] = get_color(pointers[i * 3 + 2]);
+        colors[i] = get_color(pointers[i * 3 + 2], 0);
     }
 
     vector<unsigned char> c;

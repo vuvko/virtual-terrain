@@ -36,7 +36,7 @@ const double shift = 1.5;
 
 enum
 {
-    N = 7,
+    N = 6,
     MARGIN = 2,
     OBJECTS_NUM = 50
 };
@@ -82,7 +82,7 @@ main(int argc, char *argv[])
 
     init_light();
     init_material();
-    init_fog();
+    //init_fog();
 
     //glEnable(GL_NORMALIZE);
 
@@ -156,7 +156,7 @@ init_fog(void)
 void
 Display(void)
 {
-    glClearColor(0.5, 0.5, 0.5, 1);
+    glClearColor(0.75, 0.75, 0.75, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
     render_scene();

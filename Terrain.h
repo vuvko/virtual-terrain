@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <vector>
 #include <map>
+#include <queue>
 
 #include <iostream>
 
@@ -38,16 +39,23 @@ public:
     enum
     {
         MIN = -10,
-        MAX = 200,
+        MAX = 100,
 
-        NORM = 7
+        NORM = 10,
+
+        MIN_HUMIDITY = 0,
+        MAX_HUMIDITY = 5,
+
+        NUM_RAND_POINTS_PER_SIZE = 25
     };
 private:
     double **matrix;
+    double **humidity;
     int n;
     int size;
     int seed;
 
+    void flow_humidity(int x, int y, double val);
     static void generate(double **matrix, int size, int x_shift, int y_shift);
 };
 
