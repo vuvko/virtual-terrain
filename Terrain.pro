@@ -9,8 +9,7 @@ SOURCES += main.cpp \
     Object.cpp \
     common.cpp
 
-OTHER_FILES += \
-    CMakeLists.txt
+OTHER_FILES +=
 
 HEADERS += \
     Terrain.h \
@@ -18,3 +17,5 @@ HEADERS += \
     common.h \
     Object.h
 
+
+win32: LIBS += -lfreeglut -lopengl32 -lglu32

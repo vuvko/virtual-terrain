@@ -7,11 +7,35 @@ get_neighbours(int x, int y, int size)
 {
     vector<Coord> neighbours;
     neighbours.push_back(Coord((size + x - 1) % size, y));
-    neighbours.push_back(Coord((size + x + 1) % size, y));
+    neighbours.push_back(Coord((x + 1) % size, y));
     neighbours.push_back(Coord(x, (size + y - 1) % size));
-    neighbours.push_back(Coord(x, (size + y + 1) % size));
+    neighbours.push_back(Coord(x, (y + 1) % size));
 
     return neighbours;
+}
+
+bool
+above_line(const vector<double> &coeff, double x, double y)
+{
+    //cerr << "(" << x << ", " << y << "); A = " << coeff[0]
+    //     << "; B = " << coeff[1] << "; C = " << coeff[2] << ";" << endl;
+    //cerr << "CALC: " << x * coeff[0] + y * coeff[1] << " Vs " << coeff[2] << " = " <<
+    //        int((x * coeff[0] + y * coeff[1] + coeff[2]) > 0) << endl;
+    return (x * coeff[0] + y * coeff[1] + coeff[2]) > 0.1;
+}
+
+vector<double>
+get_line_coefficients(double x1, double y1, double x2, double y2)
+{
+    //cerr << "(" << x1 << ", " << y1 << ") and (" << x2 << ", " << y2 << ")" << endl;
+    vector<double> coeff(3, 0);
+    coeff[0] = y1 - y2;
+    coeff[1] = x2 - x1;
+    coeff[2] = x1 * y2 - x2 * y1;
+
+    //cerr << "A = " << coeff[0] << "; B = " << coeff[1] << "; C = " << coeff[2] << ";" << endl;
+
+    return coeff;
 }
 
 void
@@ -117,9 +141,9 @@ set_color(double h, unsigned char *colors)
         SAND_G = 250,
         SAND_B = 15,
 
-        WATER_R = 0,
-        WATER_G = 10,
-        WATER_B = 150
+        WATER_R = 70,
+        WATER_G = 90,
+        WATER_B = 100
     };
 
     h = fabs(h);
@@ -170,9 +194,9 @@ get_color(float h, double humidity)
 
         // Mountain height
         M_SNOW = 6,
-        M_TUNDRA = 3,
-        M_WASTE = 2,
-        M_DRY = 1,
+        M_TUNDRA = 5,
+        M_WASTE = 4,
+        M_DRY = 2,
 
         // Hight forest height
         H_TAIGA = 6,
@@ -181,7 +205,7 @@ get_color(float h, double humidity)
 
         // Low forest height
         L_TEMPERATE_RAIN = 6,
-        L_TEMPERATE_FOREST = 5,
+        L_TEMPERATE_FOREST = 4,
         L_GRASS = 3,
         L_TEMPERATE_DESERT = 1,
 
@@ -191,8 +215,8 @@ get_color(float h, double humidity)
         G_GRASS = 2,
         G_DESERT = 1,
 
-        MOUNTAIN_HEIGHT = 13,
-        HIGH_FOREST_HEIGHT = 9,
+        MOUNTAIN_HEIGHT = 23,
+        HIGH_FOREST_HEIGHT = 16,
         LOW_FOREST_HEIGHT = 5,
         LOW_GROUND_HEIGHT = 1,
         WATER_HEIGHT = 0,
@@ -201,9 +225,9 @@ get_color(float h, double humidity)
         SNOW_G = 230,
         SNOW_B = 230,
 
-        TUNDRA_R = 150,
-        TUNDRA_G = 220,
-        TUNDRA_B = 200,
+        TUNDRA_R = 128,
+        TUNDRA_G = 155,
+        TUNDRA_B = 143,
 
         WASTE_R = 170,
         WASTE_G = 160,
@@ -213,45 +237,45 @@ get_color(float h, double humidity)
         DRY_G = 90,
         DRY_B = 90,
 
-        TAIGA_R = 130,
-        TAIGA_G = 180,
-        TAIGA_B = 5,
+        TAIGA_R = 16,
+        TAIGA_G = 92,
+        TAIGA_B = 23,
 
-        SHRUB_R = 150,
-        SHRUB_G = 215,
-        SHRUB_B = 50,
+        SHRUB_R = 160,
+        SHRUB_G = 190,
+        SHRUB_B = 77,
 
-        TEMP_DESERT_R = 200,
-        TEMP_DESERT_G = 234,
-        TEMP_DESERT_B = 30,
+        TEMP_DESERT_R = 207,
+        TEMP_DESERT_G = 214,
+        TEMP_DESERT_B = 13,
 
         TEMP_RAIN_R = 50,
         TEMP_RAIN_G = 210,
         TEMP_RAIN_B = 70,
 
-        TEMP_FOREST_R = 120,
-        TEMP_FOREST_G = 240,
-        TEMP_FOREST_B = 40,
+        TEMP_FOREST_R = 153,
+        TEMP_FOREST_G = 196,
+        TEMP_FOREST_B = 87,
 
-        GRASS_R = 30,
-        GRASS_G = 212,
-        GRASS_B = 55,
+        GRASS_R = 59,
+        GRASS_G = 172,
+        GRASS_B = 75,
 
-        TROPIC_R = 15,
-        TROPIC_G = 235,
-        TROPIC_B = 80,
+        TROPIC_R = 86,
+        TROPIC_G = 174,
+        TROPIC_B = 132,
 
-        TEMP_TROPIC_R = 80,
-        TEMP_TROPIC_G = 255,
-        TEMP_TROPIC_B = 50,
+        TEMP_TROPIC_R = 136,
+        TEMP_TROPIC_G = 196,
+        TEMP_TROPIC_B = 96,
 
         DESERT_R = 235,
         DESERT_G = 167,
         DESERT_B = 50,
 
-        WATER_R = 0,
-        WATER_G = 10,
-        WATER_B = 150
+        WATER_R = 69,
+        WATER_G = 77,
+        WATER_B = 106
     };
     vector<unsigned char> colors(3, 0);
     h = fabs(h);
@@ -381,9 +405,9 @@ set_water_color(unsigned char *colors)
 {
     enum
     {
-        WATER_R = 0,
-        WATER_G = 10,
-        WATER_B = 150,
+        WATER_R = 70,
+        WATER_G = 80,
+        WATER_B = 100,
         ALPHA = 175
     };
 
@@ -399,9 +423,9 @@ get_water_color(void)
     vector<unsigned char> colors(4, 0);
     enum
     {
-        WATER_R = 0,
-        WATER_G = 10,
-        WATER_B = 150,
+        WATER_R = 70,
+        WATER_G = 80,
+        WATER_B = 100,
         ALPHA = 175
     };
 
