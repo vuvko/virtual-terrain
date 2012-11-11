@@ -30,10 +30,13 @@ public:
     void set_y(double y_);
     void set_z(double z_);
 
+    void init_list(void);
+
 private:
     double x;
     double y;
     double z;
+    double angle;
     Type type;
 
     void draw_tree(void) const;

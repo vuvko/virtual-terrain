@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
-#include <GL/glew.h>
+#include <cmath>
+//#include <GL/glew.h>
 #include <GL/glut.h>
 #include <GL/gl.h>
 #include <vector>
@@ -22,6 +23,8 @@ void init_fog(void);
 void render_scene(void);
 void render_water(void);
 void set_camera(void);
+void mouse_move(int x, int y);
+void exit_programm(int status);
 
 GLint Width = 512, Height = 512;
 
@@ -29,19 +32,25 @@ double x_pos = 0;
 double y_pos = 0;
 double z_pos = 0;
 
+int prev_x = 0, prev_y = 0;
+bool first = true;
+int cur_time = 0;
+
 vector<double> eye(3, 0);
 vector<double> at(3, 0);
+float light_position[4] = {0, 2000, 500, 1};
 double phi = 0, psi = 0, r = 0;
 const double shift = 1.5;
+vector<bool> init_lists(Object::NUM, false);
 
 enum
 {
-    N = 6,
-    MARGIN = 2,
+    N = 9,
+    MARGIN = 3,
     OBJECTS_NUM = 50
 };
-Terrain terrain_matrix(N);
-vector<Object> objects(OBJECTS_NUM);
+Terrain terrain_matrix(light_position, N);
+vector<Object> objects(N * OBJECTS_NUM);
 vector<float> land_pointers;
 vector<float> land_normals;
 vector<unsigned char> land_colors;
@@ -60,19 +69,22 @@ main(int argc, char *argv[])
         int y = MARGIN + next_rand((terrain_matrix.get_size() - 2) / MARGIN) * MARGIN;
 
         objects[i] = Object(x, y, terrain_matrix.at(x, y));
+        if (!init_lists[objects[i].get_type()]) {
+            objects[i].init_list();
+        }
     }
     terrain_matrix.generate_land_arrays(land_pointers, land_normals,
                                         land_colors, land_indices);
     terrain_matrix.generate_water_arrays(water_pointers, water_normals,
                                          water_colors, water_indices);
-    r = 60;
+    r = 111;
 
-    phi = 45;
-    psi = 135;
+    phi = 300;
+    psi = 110;
 
     double size = terrain_matrix.get_size();
-    at[0] = size / 2;
-    at[1] = size / 2;
+    at[0] = size * 0.35;
+    at[1] = size * 0.7;
     at[2] = 0;
 
     glutInit(&argc, argv);
@@ -82,15 +94,16 @@ main(int argc, char *argv[])
 
     init_light();
     init_material();
-    //init_fog();
+    init_fog();
 
-    //glEnable(GL_NORMALIZE);
+    glEnable(GL_NORMALIZE);
 
     glutDisplayFunc(Display);
     glutReshapeFunc(Reshape);
     glutKeyboardFunc(Keyboard);
     glutSpecialFunc(Navi);
-
+    glutPassiveMotionFunc(mouse_move);
+/*
     GLenum err = glewInit();
     if (GLEW_OK != err) {
         cerr << "Error: " << glewGetErrorString(err) << endl;
@@ -102,7 +115,7 @@ main(int argc, char *argv[])
     cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
 
     cout << endl;
-
+*/
     glutMainLoop();
 
     return 0;
@@ -114,7 +127,6 @@ init_light(void)
     GLfloat light_ambient[] = {0, 0, 0, 1};
     GLfloat light_diffuse[] = {1, 1, 1, 1};
     GLfloat light_specular[] = {1, 1, 1, 1};
-    GLfloat light_position[] = {300, 300, 300, 1};
     glLightfv(GL_LIGHT0, GL_AMBIENT, light_ambient);
     glLightfv(GL_LIGHT0, GL_DIFFUSE, light_diffuse);
     glLightfv(GL_LIGHT0, GL_SPECULAR, light_specular);
@@ -156,6 +168,7 @@ init_fog(void)
 void
 Display(void)
 {
+    int tmp = glutGet(GLUT_ELAPSED_TIME);
     glClearColor(0.75, 0.75, 0.75, 1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
@@ -193,6 +206,7 @@ Display(void)
     render_water();
 
     glFlush();
+    cur_time = glutGet(GLUT_ELAPSED_TIME) - tmp;
 }
 
 void
@@ -242,7 +256,7 @@ Reshape(GLint w, GLint h)
 
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
-    gluPerspective(40, (GLfloat)w / h, 1, 2000);
+    gluPerspective(40, (GLfloat)w / h, 1, 5000);
 
     set_camera();
 }
@@ -254,7 +268,7 @@ Keyboard(unsigned char key, int x, int y)
 
     if (key == ESCAPE)
     {
-        exit(0);
+        exit_programm(0);
     }
 }
 
@@ -320,4 +334,52 @@ set_camera(void)
             sin(r_psi - M_PI / 2) * cos(r_phi),
             sin(r_psi - M_PI / 2) * sin(r_phi),
             cos(r_psi - M_PI / 2));
+}
+
+void
+mouse_move(int x, int y)
+{
+    if (x < 5 || x > Width - 5 || y < 5 || y > Height - 5) {
+        first = true;
+        return;
+    }
+    if (first) {
+        prev_x = x;
+        prev_y = y;
+        first = false;
+        return;
+    }
+    const double norm = 20; // heuristic const
+    int dx = prev_x - x;
+    int dy = prev_y - y;
+
+    prev_x = x;
+    prev_y = y;
+
+    if (cur_time == 0) {
+        cur_time = 1;
+    }
+
+    psi += dy / norm;
+    phi += dx / norm;
+
+    if (phi < 0) {
+        phi = 360;
+    } else if (phi > 360) {
+        phi = 0;
+    }
+    if (psi < 0) {
+        psi = 360;
+    } else if (psi > 360) {
+        psi = 0;
+    }
+
+    set_camera();
+    Display();
+}
+
+void
+exit_programm(int status)
+{
+    exit(status);
 }

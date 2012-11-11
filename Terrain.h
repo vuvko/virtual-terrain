@@ -17,7 +17,11 @@
 class Terrain
 {
 public:
-    Terrain(int n_ = 1, bool use_seed = false, int seed_ = 0);
+    Terrain(
+            const float *light_pos,
+            int n_ = 1,
+            bool use_seed = false,
+            int seed_ = 0);
     ~Terrain();
 
     double at(int x, int y) const;
@@ -38,25 +42,31 @@ public:
 
     enum
     {
-        MIN = -10,
-        MAX = 100,
+        MIN = -15,
+        MAX = 15,
 
-        NORM = 10,
+        ROUGH = 2,
 
         MIN_HUMIDITY = 0,
         MAX_HUMIDITY = 5,
 
-        NUM_RAND_POINTS_PER_SIZE = 25
+        NUM_RAND_POINTS_PER_SIZE = 25,
+        SHADOW_NORM = 3,
+        SHADOW_BOUND = 1,
+        SHADOW_MAX = 10
     };
 private:
-    double **matrix;
-    double **humidity;
+    std::vector<std::vector<double> > matrix;
+    std::vector<std::vector<double> > humidity;
+    std::vector<std::vector<double> > shadows;
     int n;
     int size;
     int seed;
 
     void flow_humidity(int x, int y, double val);
-    static void generate(double **matrix, int size, int x_shift, int y_shift);
+    static void generate(
+            std::vector<std::vector<double> > &matrix,
+            int size, int x_shift, int y_shift, double coeff);
 };
 
 #endif // TERRAIN_H

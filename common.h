@@ -15,6 +15,12 @@ const double eps = 0.0001;
 typedef std::pair<int, int> Coord;
 std::vector<Coord> get_neighbours(int x, int y, int size);
 
+std::vector<double>
+get_line_coefficients(double x1, double y1, double x2, double y2);
+
+bool
+above_line(const std::vector<double> &coeff, double x, double y);
+
 template<typename T> T
 sqr(T a)
 {
