@@ -17,13 +17,60 @@ Terrain::Terrain(const float *light_pos, int n_, bool use_seed, int seed_) :
     humidity = vector<vector<double> >(size, vector<double>(size, 0));
     shadows = vector<vector<double> >(size, vector<double>(size, 0));
 
-    matrix[0][0] = (next_rand(MIN, MAX) + 0.0);
-    matrix[0][size - 1] = (next_rand(MIN, MAX) + 0.0);
-    matrix[size - 1][0] = (next_rand(MIN, MAX) + 0.0);
-    matrix[size - 1][size - 1] = (next_rand(MIN, MAX) + 0.0);
+    matrix[0][0] = (next_rand(int(MIN), int(MAX)) + 0.0);
+    matrix[0][size - 1] = (next_rand(int(MIN), int(MAX)) + 0.0);
+    matrix[size - 1][0] = (next_rand(int(MIN), int(MAX)) + 0.0);
+    matrix[size - 1][size - 1] = (next_rand(int(MIN), int(MAX)) + 0.0);
 
     double coeff = double(MAX) / size;
-    generate(matrix, size, 0, 0, coeff);
+    //generate(matrix, size, 0, 0, coeff);
+
+    for (int cur_size = size; cur_size > 2; cur_size = (cur_size + 1) / 2) {
+        // square
+        for (int x = 0; x < size - 1; x += cur_size - 1) {
+            for (int y = 0; y < size - 1; y += cur_size - 1) {
+                int med = cur_size / 2;
+                int x1 = x + cur_size - 1, y1 = y + cur_size - 1;
+                matrix[x + med][y + med] = (matrix[x][y] + matrix[x1][y] +
+                                            matrix[x][y1] + matrix[x1][y1]) / 4.0 +
+                        next_rand() * cur_size * coeff * ROUGH;
+            }
+        }
+        // diamond
+        for (int x = 0; x < size - 1; x += cur_size - 1) {
+            for (int y = 0; y < size - 1; y += cur_size - 1) {
+                int med = cur_size / 2;
+                int x1 = x + cur_size - 1, y1 = y + cur_size - 1;
+                double left = 0, right = 0, up = 0, down = 0;
+                double center = matrix[x + med][y + med];
+                if (y - med > 0) {
+                    down = matrix[x + med][y - med];
+                }
+                if (y1 + med < size) {
+                    up = matrix[x + med][y1 + med];
+                }
+                if (x - med > 0) {
+                    left = matrix[x - med][y + med];
+                }
+                if (x1 + med < size) {
+                    right = matrix[x1 + med][y + med];
+                }
+                matrix[x + med][y] = (matrix[x][y] + matrix[x1][y] +
+                                      center + down) / 4.0 +
+                        next_rand() * cur_size * coeff * ROUGH;
+                matrix[x][y + med] = (matrix[x][y] + matrix[x][y1] +
+                                      center + left) / 4.0 +
+                        next_rand() * cur_size * coeff * ROUGH;
+                matrix[x + med][y1] = (matrix[x][y1] + matrix[x1][y1] +
+                                       center + up) / 4.0 +
+                        next_rand() * cur_size * coeff * ROUGH;
+                matrix[x1][y + med] = (matrix[x1][y] + matrix[x1][y1] +
+                                       center + right) / 4.0 +
+                        next_rand() * cur_size * coeff * ROUGH;
+            }
+        }
+    }
+
     //cerr << coeff << endl;
 
     // post process
@@ -75,7 +122,7 @@ Terrain::Terrain(const float *light_pos, int n_, bool use_seed, int seed_) :
         int max_coord = 0;
         for (int y = size - 1; y >= 0; --y) {
             /*
-              Тут где-то лажа... =)
+              РўСѓС‚ РіРґРµ-С‚Рѕ Р»Р°Р¶Р°... =)
             if (searching) { // if we are serching for a new pixel that is lighted up
                 if (above_line(coeffs, y, matrix[x][y])) {
                     searching = false; // found it
@@ -92,7 +139,7 @@ Terrain::Terrain(const float *light_pos, int n_, bool use_seed, int seed_) :
                     searching = true; //and we have to find another lighted pixel
                 }
             } else {
-                // скорее всего из-за этого
+                // СЃРєРѕСЂРµРµ РІСЃРµРіРѕ РёР·-Р·Р° СЌС‚РѕРіРѕ
                 shadows[x][y] = -SHADOW_MAX;
                 max = matrix[x][y]; // new local maximum
                 max_coord = y;
@@ -134,7 +181,7 @@ Terrain::Terrain(const float *light_pos, int n_, bool use_seed, int seed_) :
     for (int i = 0; i < NUM_RAND_POINTS_PER_SIZE * size; ++i) {
         int x = next_rand(size - 1);
         int y = next_rand(size - 1);
-        humidity[x][y] = next_rand(MIN_HUMIDITY, MAX_HUMIDITY);
+        humidity[x][y] = next_rand(int(MIN_HUMIDITY), int(MAX_HUMIDITY));
         coords.push_back(Coord(x, y));
     }
     for (int i = 0; i < coords.size(); ++i) {
@@ -159,7 +206,7 @@ Terrain::generate(
     corners[2] = matrix[x_shift][y_shift + size - 1];
     corners[3] = matrix[x_shift + size - 1][y_shift + size - 1];
 
-    int med = size / 2;
+    int med = (size + 1) / 2 - 1;
     matrix[x_shift + med][y_shift] =
             max(-3.0, (corners[0] + corners[1]) / 2.0 +
                 size * coeff * next_rand() * ROUGH);
@@ -250,7 +297,7 @@ Terrain::generate_land_arrays(std::vector<float> &pointers,
     vector<vector<unsigned char> > local_c(size * size, vector<unsigned char>(3, 0));
     vector<bool> flags(size * size, false);
     /*
-      тоже не работает почему-то...
+      С‚РѕР¶Рµ РЅРµ СЂР°Р±РѕС‚Р°РµС‚ РїРѕС‡РµРјСѓ-С‚Рѕ...
     for (int x = 0; x < size; ++x) {
         for (int y = 0; y < size; ++y) {
             if (matrix[x][y] > eps) {
