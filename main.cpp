@@ -1,7 +1,6 @@
 #include <iostream>
 #include <cstdlib>
 #include <cmath>
-//#include <GL/glew.h>
 #include <GL/glut.h>
 #include <GL/gl.h>
 #include <vector>
@@ -19,7 +18,6 @@ void Keyboard(unsigned char key, int x, int y);
 void Navi(int key, int x, int y);
 void init_light(void);
 void init_material(void);
-void init_textures(void);
 void init_fog(void);
 void render_scene(void);
 void render_water(void);
@@ -47,7 +45,7 @@ GLuint textureID;
 
 enum
 {
-    N = 6,
+    N = 9,
     MARGIN = 3,
     OBJECTS_NUM = 50
 };
@@ -65,7 +63,6 @@ vector<unsigned> water_indices;
 int
 main(int argc, char *argv[])
 {
-    //terrain_matrix.print();
     srand(time(NULL));
     for (int i = 0; i < objects.size(); ++i) {
         int x = MARGIN + next_rand((terrain_matrix.get_size() - 2) / MARGIN) * MARGIN;
@@ -97,29 +94,15 @@ main(int argc, char *argv[])
 
     init_light();
     init_material();
-    //init_fog();
-    init_textures();
+    init_fog();
 
-    //glEnable(GL_NORMALIZE);
 
     glutDisplayFunc(Display);
     glutReshapeFunc(Reshape);
     glutKeyboardFunc(Keyboard);
     glutSpecialFunc(Navi);
     glutPassiveMotionFunc(mouse_move);
-/*
-    GLenum err = glewInit();
-    if (GLEW_OK != err) {
-        cerr << "Error: " << glewGetErrorString(err) << endl;
-        return 0;
-    }
-    cout << "Vendor: " << glGetString(GL_VENDOR) << endl;
-    cout << "Render: " << glGetString(GL_RENDERER) << endl;
-    cout << "Version: " << glGetString(GL_VERSION) << endl;
-    cout << "GLSL: " << glGetString(GL_SHADING_LANGUAGE_VERSION) << endl;
 
-    cout << endl;
-*/
     glutMainLoop();
 
     return 0;
@@ -165,14 +148,8 @@ init_fog(void)
     GLfloat fog_color[4] = {0.5, 0.5, 0.55, 1};
     glEnable(GL_FOG);
     glFogi(GL_FOG_MODE, GL_EXP2);
-    glFogf(GL_FOG_DENSITY, 0.01);
+    glFogf(GL_FOG_DENSITY, 0.005);
     glFogfv(GL_FOG_COLOR, fog_color);
-}
-
-void
-init_textures(void)
-{
-    //textureID = loadBMP_custom("/home/andrey/Downloads/wood2.bmp");
 }
 
 void
@@ -214,22 +191,7 @@ Display(void)
     glDisable(GL_STENCIL_TEST);
 
     render_water();
-    /*
-    glEnable(GL_TEXTURE_2D);
-    glBindTexture(GL_TEXTURE_2D, textureID);
-    glColor3ub(255, 0, 0);
-    glBegin(GL_QUADS);
-    glTexCoord2d(0.0, 0.0);
-    glVertex3d(0.0, 0.0, 0);
-    glTexCoord2d(1, 0.0);
-    glVertex3d(1.0, 0.0, 0);
-    glTexCoord2d(1, 1);
-    glVertex3d(1.0, 1.0, 0);
-    glTexCoord2d(0.0, 1);
-    glVertex3d(0.0, 1.0, 0);
-    glEnd();
-    glDisable(GL_TEXTURE_2D);
-    */
+
     glFlush();
     cur_time = glutGet(GLUT_ELAPSED_TIME) - tmp;
 }
@@ -360,16 +322,12 @@ set_camera(void)
     eye[0] = at[0] - x;
     eye[1] = at[1] - y;
     eye[2] = at[2] - z;
-    /*
-    cerr << eye[0] << ", " << eye[1] << ", " << eye[2] << endl;
-    cerr << at[0] << ", " << at[1] << ", " << at[2] << endl;
-    cerr << endl;
-    */
+
     gluLookAt(eye[0], eye[1], eye[2],
-            at[0], at[1], at[2],
-            sin(r_psi - M_PI / 2) * cos(r_phi),
-            sin(r_psi - M_PI / 2) * sin(r_phi),
-            cos(r_psi - M_PI / 2));
+              at[0], at[1], at[2],
+              sin(r_psi - M_PI / 2) * cos(r_phi),
+              sin(r_psi - M_PI / 2) * sin(r_phi),
+              cos(r_psi - M_PI / 2));
 }
 
 void

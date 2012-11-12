@@ -42,10 +42,10 @@ public:
 
     enum
     {
-        MIN = -15,
+        MIN = -2,
         MAX = 15,
 
-        ROUGH = 2,
+        ROUGH = 5,
 
         MIN_HUMIDITY = 0,
         MAX_HUMIDITY = 5,
@@ -64,9 +64,6 @@ private:
     int seed;
 
     void flow_humidity(int x, int y, double val);
-    static void generate(
-            std::vector<std::vector<double> > &matrix,
-            int size, int x_shift, int y_shift, double coeff);
 };
 
 #endif // TERRAIN_H
