@@ -19,6 +19,7 @@ void Keyboard(unsigned char key, int x, int y);
 void Navi(int key, int x, int y);
 void init_light(void);
 void init_material(void);
+void init_textures(void);
 void init_fog(void);
 void render_scene(void);
 void render_water(void);
@@ -42,10 +43,11 @@ float light_position[4] = {0, 2000, 500, 1};
 double phi = 0, psi = 0, r = 0;
 const double shift = 1.5;
 vector<bool> init_lists(Object::NUM, false);
+GLuint textureID;
 
 enum
 {
-    N = 9,
+    N = 6,
     MARGIN = 3,
     OBJECTS_NUM = 50
 };
@@ -63,6 +65,7 @@ vector<unsigned> water_indices;
 int
 main(int argc, char *argv[])
 {
+    //terrain_matrix.print();
     srand(time(NULL));
     for (int i = 0; i < objects.size(); ++i) {
         int x = MARGIN + next_rand((terrain_matrix.get_size() - 2) / MARGIN) * MARGIN;
@@ -94,9 +97,10 @@ main(int argc, char *argv[])
 
     init_light();
     init_material();
-    init_fog();
+    //init_fog();
+    init_textures();
 
-    glEnable(GL_NORMALIZE);
+    //glEnable(GL_NORMALIZE);
 
     glutDisplayFunc(Display);
     glutReshapeFunc(Reshape);
@@ -146,7 +150,7 @@ init_material(void)
     float mat_dif[] = {0.9, 0.9, 0.9};
     float mat_amb[] = {0.2, 0.2, 0.2};
     float mat_spec[] = {0.2, 0.2, 0.2};
-    float mat_shi = 0.2 * 128;
+    float mat_shi = 70;
     glMaterialfv(GL_FRONT, GL_AMBIENT, mat_amb);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_dif);
     glMaterialfv(GL_FRONT, GL_SPECULAR, mat_spec);
@@ -163,6 +167,12 @@ init_fog(void)
     glFogi(GL_FOG_MODE, GL_EXP2);
     glFogf(GL_FOG_DENSITY, 0.01);
     glFogfv(GL_FOG_COLOR, fog_color);
+}
+
+void
+init_textures(void)
+{
+    //textureID = loadBMP_custom("/home/andrey/Downloads/wood2.bmp");
 }
 
 void
@@ -204,7 +214,22 @@ Display(void)
     glDisable(GL_STENCIL_TEST);
 
     render_water();
-
+    /*
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, textureID);
+    glColor3ub(255, 0, 0);
+    glBegin(GL_QUADS);
+    glTexCoord2d(0.0, 0.0);
+    glVertex3d(0.0, 0.0, 0);
+    glTexCoord2d(1, 0.0);
+    glVertex3d(1.0, 0.0, 0);
+    glTexCoord2d(1, 1);
+    glVertex3d(1.0, 1.0, 0);
+    glTexCoord2d(0.0, 1);
+    glVertex3d(0.0, 1.0, 0);
+    glEnd();
+    glDisable(GL_TEXTURE_2D);
+    */
     glFlush();
     cur_time = glutGet(GLUT_ELAPSED_TIME) - tmp;
 }
@@ -293,6 +318,12 @@ Navi(int key, int x, int y)
         break;
     case GLUT_KEY_UP:
         r -= shift;
+        if (r < eps) { // fixes the problem of inverting camera and controls
+            r = 5 * shift; // in order to minimize the number of operations
+            dx = r * sin(r_psi) * cos(r_phi);
+            dy = r * sin(r_psi) * sin(r_phi);
+            dz = r * cos(r_psi);
+        }
         break;
     case GLUT_KEY_PAGE_DOWN:
         dx = -shift * sin(r_psi - M_PI / 2) * cos(r_phi);
@@ -329,6 +360,11 @@ set_camera(void)
     eye[0] = at[0] - x;
     eye[1] = at[1] - y;
     eye[2] = at[2] - z;
+    /*
+    cerr << eye[0] << ", " << eye[1] << ", " << eye[2] << endl;
+    cerr << at[0] << ", " << at[1] << ", " << at[2] << endl;
+    cerr << endl;
+    */
     gluLookAt(eye[0], eye[1], eye[2],
             at[0], at[1], at[2],
             sin(r_psi - M_PI / 2) * cos(r_phi),

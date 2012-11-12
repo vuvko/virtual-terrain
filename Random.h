@@ -3,7 +3,13 @@
 
 #include <cstdlib>
 
-int next_rand(int a, int b);
+//int next_rand(int a, int b);
+template<typename T>
+T next_rand(const T &a, const T &b)
+{
+    return ((rand() + 0.0) / RAND_MAX) * (b - a) + a;
+}
+
 int next_rand(int n);
 double next_rand(void);
 

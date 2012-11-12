@@ -3,12 +3,6 @@
 using namespace std;
 
 int
-next_rand(int a, int b)
-{
-    return (rand() + 0.0) / RAND_MAX * (b - a) + a;
-}
-
-int
 next_rand(int n)
 {
     return (rand() + 0.0) / RAND_MAX * n;

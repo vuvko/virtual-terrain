@@ -18,4 +18,5 @@ HEADERS += \
     Object.h
 
 
-win32: LIBS += -lfreeglut -lopengl32 -lglu32
+win32: LIBS += -lopengl32 -lfreeglut -lglu32
+unix: LIBS += -lglut -lGL -lGLU
