@@ -23,7 +23,6 @@ Terrain::Terrain(const float *light_pos, int n_, bool use_seed, int seed_) :
     matrix[size - 1][size - 1] = (next_rand(int(MIN), int(MAX)) + 0.0);
 
     double coeff = double(MAX) / size;
-    //generate(matrix, size, 0, 0, coeff);
 
     for (int cur_size = size; cur_size > 2; cur_size = (cur_size + 1) / 2) {
         // square
@@ -71,12 +70,10 @@ Terrain::Terrain(const float *light_pos, int n_, bool use_seed, int seed_) :
         }
     }
 
-    //cerr << coeff << endl;
-
     // post process
     // using gaussian filter
     int f_size = 0;
-    double sigma = 1.5;//min(2.0, size / 50.0);
+    double sigma = 1.5;
     double bound = 6, approx = 0.9;
     vector<vector<double> > filter = generate_filter(sigma, f_size);
     for (int x = 0; x < size; ++x) {
@@ -121,30 +118,6 @@ Terrain::Terrain(const float *light_pos, int n_, bool use_seed, int seed_) :
         double max = -10;
         int max_coord = 0;
         for (int y = size - 1; y >= 0; --y) {
-            /*
-              Тут где-то лажа... =)
-            if (searching) { // if we are serching for a new pixel that is lighted up
-                if (above_line(coeffs, y, matrix[x][y])) {
-                    searching = false; // found it
-                    max = matrix[x][y]; // set local maximum
-                    max_coord = y;
-                    shadows[x][y] = 0;
-                } else {
-                    shadows[x][y] = SHADOW_MAX; // still in shadow
-                }
-            } else if (matrix[x][y] < max + eps) { // if new pixel is lower than local maximum
-                coeffs = get_line_coefficients(max_coord, max, light_pos[1] - y, light_pos[2]);
-                if (!above_line(coeffs, y, matrix[x][y])) {
-                    shadows[x][y] = SHADOW_MAX; // it is in shadow
-                    searching = true; //and we have to find another lighted pixel
-                }
-            } else {
-                // скорее всего из-за этого
-                shadows[x][y] = -SHADOW_MAX;
-                max = matrix[x][y]; // new local maximum
-                max_coord = y;
-            }
-            */
             if (above_line(coeffs, y, matrix[x][y])) {
                 shadows[x][y] = -SHADOW_MAX;
                 coeffs = get_line_coefficients(y, matrix[x][y], light_pos[1] - y, light_pos[2]);
@@ -189,49 +162,6 @@ Terrain::Terrain(const float *light_pos, int n_, bool use_seed, int seed_) :
         int y = coords[i].second;
         flow_humidity(x, y, humidity[x][y]);
     }
-}
-
-void
-Terrain::generate(
-        vector<vector<double> > &matrix,
-        int size, int x_shift, int y_shift, double coeff)
-{
-    if (size <= 2)
-        return;
-
-    double corners[4];
-
-    corners[0] = matrix[x_shift][y_shift];
-    corners[1] = matrix[x_shift + size - 1][y_shift];
-    corners[2] = matrix[x_shift][y_shift + size - 1];
-    corners[3] = matrix[x_shift + size - 1][y_shift + size - 1];
-
-    int med = (size + 1) / 2 - 1;
-    matrix[x_shift + med][y_shift] =
-            max(-3.0, (corners[0] + corners[1]) / 2.0 +
-                size * coeff * next_rand() * ROUGH);
-    matrix[x_shift + med][y_shift + size - 1] =
-            max(-3.0, (corners[2] + corners[3]) / 2.0 +
-                size * coeff * next_rand() * ROUGH);
-    matrix[x_shift][y_shift + med] =
-            max(-3.0, (corners[0] + corners[2]) / 2.0 +
-                size * coeff * next_rand() * ROUGH);
-    matrix[x_shift + size - 1][y_shift + med] =
-            max(-3.0, (corners[1] + corners[3]) / 2.0 +
-                size * coeff * next_rand() * ROUGH);
-
-    double one = (corners[0] + corners[1] + corners[2] + corners[3]) / 4.0;
-    double two = size * coeff * next_rand() * ROUGH;
-    //cerr << size << " " << med << endl;
-    //cerr << "[" << corners[0] << ", " << corners[1] << ", " << corners[2] << ", " << corners[3] << "]" << endl;
-    //cerr << one << " " << two << endl;
-    matrix[x_shift + med][y_shift + med] =
-            max(-3.0, one + two);
-    //return;
-    generate(matrix, (size + 1) / 2, x_shift, y_shift, coeff);
-    generate(matrix, (size + 1) / 2, x_shift + med, y_shift, coeff);
-    generate(matrix, (size + 1) / 2, x_shift, y_shift + med, coeff);
-    generate(matrix, (size + 1) / 2, x_shift + med, y_shift + med, coeff);
 }
 
 void
@@ -296,19 +226,7 @@ Terrain::generate_land_arrays(std::vector<float> &pointers,
     vector<vector<float> > local_n(size * size, vector<float>(3, 0));
     vector<vector<unsigned char> > local_c(size * size, vector<unsigned char>(3, 0));
     vector<bool> flags(size * size, false);
-    /*
-      тоже не работает почему-то...
-    for (int x = 0; x < size; ++x) {
-        for (int y = 0; y < size; ++y) {
-            if (matrix[x][y] > eps) {
-                local_p[x * size + y][0] = x;
-                local_p[x * size + y][1] = y;
-                local_p[x * size + y][2] = matrix[x][y];
-                local_c[x * size + y] = get_color(matrix[x][y], humidity[x][y]);
-            }
-        }
-    }
-    */
+
     for (int x = 0; x < size - 1; ++x) {
         for (int y = 0; y < size - 1; ++y) {
             vector<float> a(3), b(3), c(3), d(3);
@@ -326,23 +244,23 @@ Terrain::generate_land_arrays(std::vector<float> &pointers,
 
                 clr = get_color(a[2], humidity[int(a[0])][int(a[1])]);
                 if (shadows[int(a[0])][int(a[1])] > SHADOW_BOUND) {
-                    clr[0] = max(0, clr[0] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[1] = max(0, clr[1] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[2] = max(0, clr[2] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
+                    clr[0] = max(0, clr[0] / SHADOW_NORM);
+                    clr[1] = max(0, clr[1] / SHADOW_NORM);
+                    clr[2] = max(0, clr[2] / SHADOW_NORM);
                 }
                 local_c[a[0] * size + a[1]] = clr;
                 clr = get_color(b[2], humidity[int(b[0])][int(b[1])]);
                 if (shadows[int(b[0])][int(b[1])] > SHADOW_BOUND) {
-                    clr[0] = max(0, clr[0] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[1] = max(0, clr[1] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[2] = max(0, clr[2] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
+                    clr[0] = max(0, clr[0] / SHADOW_NORM);
+                    clr[1] = max(0, clr[1] / SHADOW_NORM);
+                    clr[2] = max(0, clr[2] / SHADOW_NORM);
                 }
                 local_c[b[0] * size + b[1]] = clr;
                 clr = get_color(d[2], humidity[int(d[0])][int(d[1])]);
                 if (shadows[int(d[0])][int(d[1])] > SHADOW_BOUND) {
-                    clr[0] = max(0, clr[0] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[1] = max(0, clr[1] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[2] = max(0, clr[2] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
+                    clr[0] = max(0, clr[0] / SHADOW_NORM);
+                    clr[1] = max(0, clr[1] / SHADOW_NORM);
+                    clr[2] = max(0, clr[2] / SHADOW_NORM);
                 }
                 local_c[d[0] * size + d[1]] = clr;
 
@@ -384,23 +302,23 @@ Terrain::generate_land_arrays(std::vector<float> &pointers,
 
                 clr = get_color(a[2], humidity[int(a[0])][int(a[1])]);
                 if (shadows[int(a[0])][int(a[1])] > SHADOW_BOUND) {
-                    clr[0] = max(0, clr[0] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[1] = max(0, clr[1] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[2] = max(0, clr[2] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
+                    clr[0] = max(0, clr[0] / SHADOW_NORM);
+                    clr[1] = max(0, clr[1] / SHADOW_NORM);
+                    clr[2] = max(0, clr[2] / SHADOW_NORM);
                 }
                 local_c[a[0] * size + a[1]] = clr;
                 clr = get_color(c[2], humidity[int(c[0])][int(c[1])]);
                 if (shadows[int(c[0])][int(c[1])] > SHADOW_BOUND) {
-                    clr[0] = max(0, clr[0] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[1] = max(0, clr[1] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[2] = max(0, clr[2] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
+                    clr[0] = max(0, clr[0] / SHADOW_NORM);
+                    clr[1] = max(0, clr[1] / SHADOW_NORM);
+                    clr[2] = max(0, clr[2] / SHADOW_NORM);
                 }
                 local_c[c[0] * size + c[1]] = clr;
                 clr = get_color(d[2], humidity[int(d[0])][int(d[1])]);
                 if (shadows[int(d[0])][int(d[1])] > SHADOW_BOUND) {
-                    clr[0] = max(0, clr[0] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[1] = max(0, clr[1] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[2] = max(0, clr[2] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
+                    clr[0] = max(0, clr[0] / SHADOW_NORM);
+                    clr[1] = max(0, clr[1] / SHADOW_NORM);
+                    clr[2] = max(0, clr[2] / SHADOW_NORM);
                 }
                 local_c[d[0] * size + d[1]] = clr;
 
@@ -476,25 +394,25 @@ Terrain::generate_water_arrays(std::vector<float> &pointers,
 
                 clr = get_water_color();
                 if (shadows[int(a[0])][int(a[1])] > SHADOW_BOUND) {
-                    clr[0] = max(0, clr[0] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[1] = max(0, clr[1] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[2] = max(0, clr[2] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
+                    clr[0] = max(0, clr[0] / SHADOW_NORM);
+                    clr[1] = max(0, clr[1] / SHADOW_NORM);
+                    clr[2] = max(0, clr[2] / SHADOW_NORM);
                     clr[3] += SHADOW_NORM;
                 }
                 local_c[a[0] * size + a[1]] = clr;
                 clr = get_water_color();
                 if (shadows[int(b[0])][int(b[1])] > SHADOW_BOUND) {
-                    clr[0] = max(0, clr[0] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[1] = max(0, clr[1] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[2] = max(0, clr[2] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
+                    clr[0] = max(0, clr[0] / SHADOW_NORM);
+                    clr[1] = max(0, clr[1] / SHADOW_NORM);
+                    clr[2] = max(0, clr[2] / SHADOW_NORM);
                     clr[3] += SHADOW_NORM;
                 }
                 local_c[b[0] * size + b[1]] = clr;
                 clr = get_water_color();
                 if (shadows[int(d[0])][int(d[1])] > SHADOW_BOUND) {
-                    clr[0] = max(0, clr[0] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[1] = max(0, clr[1] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[2] = max(0, clr[2] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
+                    clr[0] = max(0, clr[0] / SHADOW_NORM);
+                    clr[1] = max(0, clr[1] / SHADOW_NORM);
+                    clr[2] = max(0, clr[2] / SHADOW_NORM);
                     clr[3] += SHADOW_NORM;
                 }
                 local_c[d[0] * size + d[1]] = clr;
@@ -545,25 +463,25 @@ Terrain::generate_water_arrays(std::vector<float> &pointers,
 
                 clr = get_water_color();
                 if (shadows[int(a[0])][int(a[1])] > SHADOW_BOUND) {
-                    clr[0] = max(0, clr[0] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[1] = max(0, clr[1] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[2] = max(0, clr[2] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
+                    clr[0] = max(0, clr[0] / SHADOW_NORM);
+                    clr[1] = max(0, clr[1] / SHADOW_NORM);
+                    clr[2] = max(0, clr[2] / SHADOW_NORM);
                     clr[3] += SHADOW_NORM;
                 }
                 local_c[a[0] * size + a[1]] = clr;
                 clr = get_water_color();
                 if (shadows[int(c[0])][int(c[1])] > SHADOW_BOUND) {
-                    clr[0] = max(0, clr[0] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[1] = max(0, clr[1] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[2] = max(0, clr[2] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
+                    clr[0] = max(0, clr[0] / SHADOW_NORM);
+                    clr[1] = max(0, clr[1] / SHADOW_NORM);
+                    clr[2] = max(0, clr[2] / SHADOW_NORM);
                     clr[3] += SHADOW_NORM;
                 }
                 local_c[c[0] * size + c[1]] = clr;
                 clr = get_water_color();
                 if (shadows[int(d[0])][int(d[1])] > SHADOW_BOUND) {
-                    clr[0] = max(0, clr[0] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[1] = max(0, clr[1] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
-                    clr[2] = max(0, clr[2] / SHADOW_NORM);// * shadows[int(a[0])][int(a[1])]);
+                    clr[0] = max(0, clr[0] / SHADOW_NORM);
+                    clr[1] = max(0, clr[1] / SHADOW_NORM);
+                    clr[2] = max(0, clr[2] / SHADOW_NORM);
                     clr[3] += SHADOW_NORM;
                 }
                 local_c[d[0] * size + d[1]] = clr;
@@ -629,16 +547,16 @@ Terrain::generate_water_arrays(std::vector<float> &pointers,
 double &
 Terrain::at(int x, int y)
 {
-    if (x < 0 || y < 0 || x >= size || y >= size)
-        throw std::range_error("Invalid arguments.");
+    //if (x < 0 || y < 0 || x >= size || y >= size)
+        //throw std::range_error("Invalid arguments.");
     return *&matrix[x][y];
 }
 
 double
 Terrain::at(int x, int y) const
 {
-    if (x < 0 || y < 0 || x >= size || y >= size)
-        throw std::range_error("Invalid arguments.");
+    //if (x < 0 || y < 0 || x >= size || y >= size)
+       // throw std::range_error("Invalid arguments.");
     return matrix[x][y];
 }
 

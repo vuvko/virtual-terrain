@@ -17,23 +17,16 @@ get_neighbours(int x, int y, int size)
 bool
 above_line(const vector<double> &coeff, double x, double y)
 {
-    //cerr << "(" << x << ", " << y << "); A = " << coeff[0]
-    //     << "; B = " << coeff[1] << "; C = " << coeff[2] << ";" << endl;
-    //cerr << "CALC: " << x * coeff[0] + y * coeff[1] << " Vs " << coeff[2] << " = " <<
-    //        int((x * coeff[0] + y * coeff[1] + coeff[2]) > 0) << endl;
     return (x * coeff[0] + y * coeff[1] + coeff[2]) > 0.1;
 }
 
 vector<double>
 get_line_coefficients(double x1, double y1, double x2, double y2)
 {
-    //cerr << "(" << x1 << ", " << y1 << ") and (" << x2 << ", " << y2 << ")" << endl;
     vector<double> coeff(3, 0);
     coeff[0] = y1 - y2;
     coeff[1] = x2 - x1;
     coeff[2] = x1 * y2 - x2 * y1;
-
-    //cerr << "A = " << coeff[0] << "; B = " << coeff[1] << "; C = " << coeff[2] << ";" << endl;
 
     return coeff;
 }
@@ -96,13 +89,7 @@ get_normal(
 
     return n;
 }
-/*
-double
-sqr(double a)
-{
-    return a * a;
-}
-*/
+
 double
 norm(const std::vector<double> a)
 {
@@ -113,75 +100,6 @@ double
 norm(const std::vector<double> a, const std::vector<double> b)
 {
     return sqrt(sqr(b[0] - a[0]) + sqr(b[1] - a[1]) + sqr(b[2] - a[2]));
-}
-
-void
-set_color(double h, unsigned char *colors)
-{
-    enum
-    {
-        MOUNTAIN = 13,
-        GRASS = 7,
-        SAND = 2,
-        WATER = 0,
-
-        SNOW_R = 255,
-        SNOW_G = 255,
-        SNOW_B = 255,
-
-        MOUNTAIN_R = 200,
-        MOUNTAIN_G = 150,
-        MOUNTAIN_B = 150,
-
-        GRASS_R = 5,
-        GRASS_G = 200,
-        GRASS_B = 5,
-
-        SAND_R = 250,
-        SAND_G = 250,
-        SAND_B = 15,
-
-        WATER_R = 70,
-        WATER_G = 90,
-        WATER_B = 100
-    };
-
-    h = fabs(h);
-
-    if (h < WATER + eps) {
-        //h = 0;
-        //glColor3ub(WATER_R, WATER_G, WATER_B);
-        colors[0] = WATER_R;
-        colors[1] = WATER_G;
-        colors[2] = WATER_B;
-        return;
-    }
-
-    if (h < SAND + eps) {
-        //glColor3ub(SAND_R, SAND_G, SAND_B);
-        colors[0] = SAND_R;
-        colors[1] = SAND_G;
-        colors[2] = SAND_B;
-        return;
-    }
-    if (h < GRASS + eps) {
-        //glColor3ub(GRASS_R, GRASS_G, GRASS_B);
-        colors[0] = GRASS_R;
-        colors[1] = GRASS_G;
-        colors[2] = GRASS_B;
-        return;
-    }
-    if (h < MOUNTAIN + eps) {
-        //glColor3ub(MOUNTAIN_R, MOUNTAIN_G, MOUNTAIN_B);
-        colors[0] = MOUNTAIN_R;
-        colors[1] = MOUNTAIN_G;
-        colors[2] = MOUNTAIN_B;
-        return;
-    }
-    //glColor3ub(SNOW_R, SNOW_G, SNOW_B);
-    colors[0] = SNOW_R;
-    colors[1] = SNOW_G;
-    colors[2] = SNOW_B;
 }
 
 vector<unsigned char>
@@ -215,10 +133,10 @@ get_color(float h, double humidity)
         G_GRASS = 2,
         G_DESERT = 1,
 
-        MOUNTAIN_HEIGHT = 23,
-        HIGH_FOREST_HEIGHT = 16,
-        LOW_FOREST_HEIGHT = 5,
-        LOW_GROUND_HEIGHT = 1,
+        MOUNTAIN_HEIGHT = 30,
+        HIGH_FOREST_HEIGHT = 21,
+        LOW_FOREST_HEIGHT = 17,
+        LOW_GROUND_HEIGHT = 4,
         WATER_HEIGHT = 0,
 
         SNOW_R = 230,
@@ -289,7 +207,6 @@ get_color(float h, double humidity)
 
     if (h < LOW_GROUND_HEIGHT + eps) {
         // Low ground height
-        //cerr << "Low ground" << endl;
         if (humidity < G_DESERT) {
             colors[0] = DESERT_R;
             colors[1] = DESERT_G;
@@ -317,7 +234,6 @@ get_color(float h, double humidity)
     }
     if (h < LOW_FOREST_HEIGHT + eps) {
         // Low forest height
-        //cerr << "Low forest" << endl;
         if (humidity < L_TEMPERATE_DESERT) {
             colors[0] = TEMP_DESERT_R;
             colors[1] = TEMP_DESERT_G;
@@ -345,7 +261,6 @@ get_color(float h, double humidity)
     }
     if (h < HIGH_FOREST_HEIGHT + eps) {
         // Hight forest height
-        //cerr << "High forest" << endl;
         if (humidity < H_TEMPERATE_DESERT) {
             colors[0] = TEMP_DESERT_R;
             colors[1] = TEMP_DESERT_G;
@@ -367,7 +282,6 @@ get_color(float h, double humidity)
     }
     if (h < MOUNTAIN_HEIGHT + eps) {
         // Mountain height
-        //cerr << "Mountain" << endl;
         if (humidity < M_DRY) {
             colors[0] = DRY_R;
             colors[1] = DRY_G;
@@ -400,23 +314,6 @@ get_color(float h, double humidity)
     return colors;
 }
 
-void
-set_water_color(unsigned char *colors)
-{
-    enum
-    {
-        WATER_R = 70,
-        WATER_G = 80,
-        WATER_B = 100,
-        ALPHA = 175
-    };
-
-    colors[0] = WATER_R;
-    colors[1] = WATER_G;
-    colors[2] = WATER_B;
-    colors[3] = ALPHA;
-}
-
 vector<unsigned char>
 get_water_color(void)
 {
@@ -435,55 +332,6 @@ get_water_color(void)
     colors[3] = ALPHA;
 
     return colors;
-}
-
-vector<unsigned char>
-generate_colors(const vector<float> &pointers)
-{
-    int size = pointers.size() / 3;
-    vector<vector<unsigned char> > colors(size, vector<unsigned char>(3, 0));
-    for (int i = 0; i < size; ++i) {
-        colors[i] = get_color(pointers[i * 3 + 2], 0);
-    }
-
-    vector<unsigned char> c;
-    for (int i = 0; i < size; ++i) {
-        c.push_back(colors[i][0]);
-        c.push_back(colors[i][1]);
-        c.push_back(colors[i][2]);
-    }
-
-    return c;
-}
-
-vector<float>
-generate_normals(const vector<float> &pointers)
-{
-    int size = pointers.size() / 3;
-    vector<vector<float> > normals(size, vector<float>(3, 0));
-    for (int i = 2; i < size; ++i) {
-        //normals[i] = get_normal(pointers[i - 2], pointers[i - 1], pointers[i]);
-        vector<vector<float> > points(3, vector<float>(3, 0));
-        for (int j = 0; j < 3; ++j) {
-            points[j][0] = pointers[(i - 2 + j) * 3];
-            points[j][1] = pointers[(i - 2 + j) * 3 + 1];
-            points[j][2] = pointers[(i - 2 + j) * 3 + 2];
-        }
-        normals[i] = get_normal(points[0], points[1], points[2]);
-    }
-    for (int i = 0; i < 3; ++i) {
-        normals[0][i] = normals[2][i];
-        normals[1][i] = normals[2][i];
-    }
-
-    vector<float> n;
-    for (int i = 0; i < size; ++i) {
-        n.push_back(normals[i][0]);
-        n.push_back(normals[i][1]);
-        n.push_back(normals[i][2]);
-    }
-
-    return n;
 }
 
 vector<vector<double> >
@@ -509,76 +357,4 @@ generate_filter(double sigma, int &size)
     }
 
     return filter;
-}
-
-void
-generate_land_indecies(float **pointers, int size, unsigned *indices, int &idx_size)
-{
-    /*
-    if (!pointers) {
-        return;
-    }
-    vector<unsigned> local;
-    for (int i = 2; i < size; ++i) {
-        if (pointers[i][2] < eps ||
-                pointers[i - 1][2] < eps ||
-                pointers[i - 2][2] < eps) {
-            local.push_back(i - 2);
-            local.push_back(i - 1);
-            local.push_back(i);
-        }
-    }
-    idx_size = local.size();
-    indices = (unsigned *)calloc(idx_size, sizeof(*indices));
-    for (int i = 0; i < local.size(); ++i) {
-        //cerr << local[i] << " ";
-        indices[i] = local[i];
-    }
-    */
-    //cerr << endl;
-}
-
-void
-watch_array(int size, float *ptr)
-{
-    if (!ptr) {
-        return;
-    }
-
-    for (int i = 0; i < size; ++i) {
-        cerr << '(' << ptr[i * 3] << ", " <<
-                ptr[i * 3 + 1] << ") -> " <<
-                ptr[i * 3 + 2] << endl;
-    }
-    /*
-    for (int i = 0; i < 100; ++i) {
-        cerr << ptr[i] << endl;
-    }
-    */
-}
-
-void
-watch_array(int size, unsigned char *ptr)
-{
-    if (!ptr) {
-        return;
-    }
-
-    for (int i = 0; i < size; ++i) {
-        cerr << int(ptr[i * 3]) << ", " <<
-                int(ptr[i * 3 + 1]) << ", " <<
-                int(ptr[i * 3 + 2]) << endl;
-    }
-}
-
-void
-watch_array(int size, unsigned *ptr)
-{
-    if (!ptr) {
-        return;
-    }
-
-    for (int i = 0; i < size; ++i) {
-        cerr << ptr[i] << endl;
-    }
 }

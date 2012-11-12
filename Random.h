@@ -3,7 +3,6 @@
 
 #include <cstdlib>
 
-//int next_rand(int a, int b);
 template<typename T>
 T next_rand(const T &a, const T &b)
 {
