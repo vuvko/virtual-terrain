@@ -420,7 +420,7 @@ Terrain::generate_water_arrays(std::vector<float> &pointers,
                 if (flags[a[0] * size + a[1]]) {
                     n = get_normal(a, b, d);
                     for (int i = 0; i < 3; ++i) {
-                        n[i] += next_rand();
+                        n[i] += next_rand() / 4;
                     }
                     local_n[a[0] * size + a[1]] =
                             sum_vect(n, local_n[a[0] * size + a[1]]);
@@ -431,7 +431,7 @@ Terrain::generate_water_arrays(std::vector<float> &pointers,
                 if (flags[b[0] * size + b[1]]) {
                     n = get_normal(a, b, d);
                     for (int i = 0; i < 3; ++i) {
-                        n[i] += next_rand();
+                        n[i] += next_rand() / 4;
                     }
                     local_n[b[0] * size + b[1]] =
                             sum_vect(n, local_n[b[0] * size + b[1]]);
@@ -442,7 +442,7 @@ Terrain::generate_water_arrays(std::vector<float> &pointers,
                 if (flags[d[0] * size + d[1]]) {
                     n = get_normal(a, b, d);
                     for (int i = 0; i < 3; ++i) {
-                        n[i] += next_rand();
+                        n[i] += next_rand() / 4;
                     }
                     local_n[d[0] * size + d[1]] =
                             sum_vect(n, local_n[d[0] * size + d[1]]);
@@ -489,7 +489,7 @@ Terrain::generate_water_arrays(std::vector<float> &pointers,
                 if (flags[a[0] * size + a[1]]) {
                     n = get_normal(a, d, c);
                     for (int i = 0; i < 3; ++i) {
-                        n[i] += next_rand();
+                        n[i] += next_rand() / 4;
                     }
                     local_n[a[0] * size + a[1]] =
                             sum_vect(n, local_n[a[0] * size + a[1]]);
@@ -500,7 +500,7 @@ Terrain::generate_water_arrays(std::vector<float> &pointers,
                 if (flags[c[0] * size + c[1]]) {
                     n = get_normal(a, d, c);
                     for (int i = 0; i < 3; ++i) {
-                        n[i] += next_rand();
+                        n[i] += next_rand() / 4;
                     }
                     local_n[c[0] * size + c[1]] =
                             sum_vect(n, local_n[c[0] * size + c[1]]);
@@ -511,7 +511,7 @@ Terrain::generate_water_arrays(std::vector<float> &pointers,
                 if (flags[d[0] * size + d[1]]) {
                     n = get_normal(a, d, c);
                     for (int i = 0; i < 3; ++i) {
-                        n[i] += next_rand();
+                        n[i] += next_rand() / 4;
                     }
                     local_n[d[0] * size + d[1]] =
                             sum_vect(n, local_n[d[0] * size + d[1]]);

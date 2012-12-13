@@ -49,7 +49,7 @@ enum
     MARGIN = 3,
     OBJECTS_NUM = 50
 };
-Terrain terrain_matrix(light_position, N);
+Terrain terrain_matrix(light_position, N, true, 8765467819);
 vector<Object> objects(N * OBJECTS_NUM);
 vector<float> land_pointers;
 vector<float> land_normals;
@@ -77,7 +77,7 @@ main(int argc, char *argv[])
                                         land_colors, land_indices);
     terrain_matrix.generate_water_arrays(water_pointers, water_normals,
                                          water_colors, water_indices);
-    r = 111;
+    r = 211;
 
     phi = 300;
     psi = 110;
@@ -88,7 +88,7 @@ main(int argc, char *argv[])
     at[2] = 0;
 
     glutInit(&argc, argv);
-    glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE | GLUT_DEPTH);
+    glutInitDisplayMode(GLUT_RGB | GLUT_SINGLE | GLUT_DEPTH | GLUT_STENCIL);
     glutInitWindowSize(Width, Height);
     glutCreateWindow("Virtual Terrain");
 
@@ -120,7 +120,6 @@ init_light(void)
     glLightfv(GL_LIGHT0, GL_POSITION, light_position);
 
     glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
     glEnable(GL_DEPTH_TEST);
 
     glEnable(GL_BLEND);
@@ -130,9 +129,9 @@ init_light(void)
 void
 init_material(void)
 {
-    float mat_dif[] = {0.9, 0.9, 0.9};
-    float mat_amb[] = {0.2, 0.2, 0.2};
-    float mat_spec[] = {0.2, 0.2, 0.2};
+    float mat_dif[] = {0.7, 0.7, 0.7};
+    float mat_amb[] = {0.3, 0.3, 0.3};
+    float mat_spec[] = {0.1, 0.1, 0.1};
     float mat_shi = 70;
     glMaterialfv(GL_FRONT, GL_AMBIENT, mat_amb);
     glMaterialfv(GL_FRONT, GL_DIFFUSE, mat_dif);
@@ -148,7 +147,7 @@ init_fog(void)
     GLfloat fog_color[4] = {0.5, 0.5, 0.55, 1};
     glEnable(GL_FOG);
     glFogi(GL_FOG_MODE, GL_EXP2);
-    glFogf(GL_FOG_DENSITY, 0.005);
+    glFogf(GL_FOG_DENSITY, 0.003);
     glFogfv(GL_FOG_COLOR, fog_color);
 }
 
@@ -240,7 +239,6 @@ Reshape(GLint w, GLint h)
     Width = w;
     Height = h;
     glViewport(0, 0, w, h);
-
     glMatrixMode(GL_PROJECTION);
     glLoadIdentity();
     gluPerspective(40, (GLfloat)w / h, 1, 5000);
@@ -328,6 +326,8 @@ set_camera(void)
               sin(r_psi - M_PI / 2) * cos(r_phi),
               sin(r_psi - M_PI / 2) * sin(r_phi),
               cos(r_psi - M_PI / 2));
+
+    glEnable(GL_LIGHT0);
 }
 
 void
